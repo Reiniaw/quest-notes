@@ -11,7 +11,7 @@
     "pack": "electron-builder --dir",
     "dev": "electronmon .",
     "build": "electron-builder",
-    "dist": "electron-builder --config.win.sign=false"
+    "dist": "set CSC_IDENTITY_AUTO_DISCOVERY=0&& electron-builder --win"
   },
   "devDependencies": {
     "electron": "^31.3.0",
@@ -22,13 +22,17 @@
     "appId": "com.quest.notes",
     "productName": "Quest Notes",
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.ico"
     }
   },
-    "nsis": {
-    "oneClick": true,
-    "perMachine": false,
-    "allowToChangeInstallationDirectory": true,
-    "deleteAppDataOnUninstall": false
-  }
+"nsis": {
+  "oneClick": false,  
+  "perMachine": false,
+  "allowToChangeInstallationDirectory": true,
+  "deleteAppDataOnUninstall": false,
+  "createDesktopShortcut": true,
+  "createStartMenuShortcut": true,
+  "shortcutName": "Quest Notes"
+}
 }
