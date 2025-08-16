@@ -1,0 +1,34 @@
+{
+  "name": "quest-notes",
+  "version": "1.0.0",
+  "description": "Заметки в стиле квестов: главные задания и мини-задания (Electron)",
+  "main": "main.js",
+  "type": "module",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dev": "electronmon .",
+    "build": "electron-builder",
+    "dist": "electron-builder --config.win.sign=false"
+  },
+  "devDependencies": {
+    "electron": "^31.3.0",
+    "electron-builder": "^24.13.3",
+    "electronmon": "^2.0.2"
+  },
+  "build": {
+    "appId": "com.quest.notes",
+    "productName": "Quest Notes",
+    "win": {
+      "target": "nsis"
+    }
+  },
+    "nsis": {
+    "oneClick": true,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false
+  }
+}

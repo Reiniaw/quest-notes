@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Квест‑Заметки</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>🎯 Квест‑Заметки</h1>
+    <div class="header-actions">
+      <button id="addMainBtn" class="btn primary">+ Главное задание</button>
+      <button id="exportBtn" class="btn">Экспорт JSON</button>
+      <input id="importFile" type="file" accept="application/json" hidden />
+      <button id="importBtn" class="btn">Импорт JSON</button>
+      <span class="hint">Двойной клик по подзаданию — переключить статус</span>
+    </div>
+  </header>
+
+  <!-- Модальное окно -->
+<div id="modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h2 id="modalTitle">Заголовок</h2>
+    <input id="modalInput" type="text" placeholder="Введите текст..." />
+    <div class="modal-buttons">
+      <button id="modalCancel">Отмена</button>
+      <button id="modalOk">ОК</button>
+    </div>
+  </div>
+</div>
+ 
+
+
+  <main class="layout">
+    <aside class="sidebar">
+      <div class="search-wrap">
+        <input id="search" type="search" placeholder="Поиск главных заданий…" />
+      </div>
+      <ul id="mainList" class="main-list" aria-label="Главные задания"></ul>
+    </aside>
+
+    <section class="content">
+      <div id="emptyState" class="empty-state">Выберите или создайте главное задание</div>
+
+      <div id="taskView" class="task-view hidden">
+        <div class="task-header">
+          <input id="taskTitle" class="title-input" />
+          <div class="task-actions">
+            <button id="addSubBtn" class="btn">+ Подзадание</button>
+            <button id="completeAllBtn" class="btn">Отметить всё выполненным</button>
+            <button id="deleteMainBtn" class="btn danger">Удалить задание</button>
+          </div>
+        </div>
+
+        <div class="progress">
+          <div id="progressBar" class="progress-bar" style="width:0%"></div>
+          <span id="progressText" class="progress-text">0 / 0</span>
+        </div>
+
+        <ul id="subList" class="sub-list" aria-label="Подзадания"></ul>
+      </div>
+    </section>
+  </main>
+
+  <template id="mainItemTpl">
+    <li class="main-item">
+      <button class="main-item-btn"></button>
+      <div class="main-item-actions">
+        <button data-action="rename" title="Переименовать">✎</button>
+        <button data-action="delete" title="Удалить">🗑</button>
+      </div>
+    </li>
+  </template>
+
+  <template id="subItemTpl">
+    <li class="sub-item">
+      <input type="checkbox" class="sub-check" />
+      <input class="sub-text" />
+      <div class="sub-actions">
+        <button data-action="delete" title="Удалить">🗑</button>
+      </div>
+    </li>
+  </template>
+
+  <script src="./renderer.js" type="module"></script>
+</body>
+</html>
