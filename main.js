@@ -2,12 +2,15 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import { loadTasks, saveTasks } from './tasksStore.js';
 
+
 const createWindow = () => {
   const win = new BrowserWindow({
-    width: 1024,
+    width: 1224,
     height: 700,
-    minWidth: 900,
-    minHeight: 600,
+    resizable: false,
+    maximizable: false,
+    fullscreen: false,
+    center: true,
     title: 'Квест‑Заметки',
     webPreferences: {
       preload: path.join(app.getAppPath(), 'preload.js'),

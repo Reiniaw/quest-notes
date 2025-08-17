@@ -23,7 +23,7 @@
 <div id="modal" class="modal-overlay hidden">
   <div class="modal-box">
     <h2 id="modalTitle">Заголовок</h2>
-    <input id="modalInput" type="text" placeholder="Введите текст..." />
+    <textarea id="modalInput" placeholder="Введите текст..." rows="6"></textarea>
     <div class="modal-buttons">
       <button id="modalCancel">Отмена</button>
       <button id="modalOk">ОК</button>
@@ -48,11 +48,14 @@
         <div class="task-header">
           <input id="taskTitle" class="title-input" />
           <div class="task-actions">
+            <button id="addDescBtn" class="btn">Добавить описание</button>
             <button id="addSubBtn" class="btn">+ Подзадание</button>
             <button id="completeAllBtn" class="btn">Отметить всё выполненным</button>
             <button id="deleteMainBtn" class="btn danger">Удалить задание</button>
           </div>
         </div>
+
+        <div id="taskDesc" class="task-desc hidden"></div>
 
         <div class="progress">
           <div id="progressBar" class="progress-bar" style="width:0%"></div>

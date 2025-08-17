@@ -166,3 +166,20 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color
 #modalTitle {
   color: #171a2b;
 }
+
+.task-desc {
+  margin: 10px 0;
+  padding: 8px;
+  
+  border-left: 3px solid var(--accent);
+  white-space: pre-wrap;
+}
+
+#modalInput {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  padding: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}

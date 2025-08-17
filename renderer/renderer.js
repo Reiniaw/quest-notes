@@ -22,6 +22,8 @@ function bindUI(){
   qs('#completeAllBtn').addEventListener('click', onCompleteAll);
   qs('#taskTitle').addEventListener('change', onRenameMain);
 
+  qs('#addDescBtn').addEventListener('click', onAddDesc);
+
   qs('#search').addEventListener('input', renderMainList);
 
   qs('#exportBtn').addEventListener('click', onExport);
@@ -95,6 +97,8 @@ function renderTaskView(){
   const view = qs('#taskView');
   const titleInput = qs('#taskTitle');
   const subList = qs('#subList');
+  const descBox = qs('#taskDesc');
+  const descBtn =qs('#addDescBtn');
 
   const task = getSelected();
   if (!task){
@@ -107,6 +111,16 @@ function renderTaskView(){
 
   titleInput.value = task.title;
   subList.innerHTML = '';
+
+  if (task.desc && task.desc.trim()){
+    descBox.textContent = task.desc;
+    descBox.classList.remove('hidden');
+    descBtn.textContent = "Изменить описание";
+  } else {
+    descBox.classList.add('hidden');
+    descBox.textContent = "";
+    descBtn.textContent = "Добавить описание";
+  }
 
   (task.subtasks || []).forEach(sub => {
     const tpl = qs('#subItemTpl').content.cloneNode(true);
@@ -289,44 +303,17 @@ function showPrompt(title, defaultValue = "") {
     okBtn.addEventListener("click", onOk);
     cancelBtn.addEventListener("click", onCancel);
   });
+
 }
 
-function showModal() {
-  const modal = document.getElementById("taskModal");
-  const input = document.getElementById("taskInput");
-
-  modal.classList.remove("hiding");
-  modal.classList.add("show");
-
-  input.value = "";
-  input.focus();
-}
-
-function hideModal() {
-  const modal = document.getElementById("taskModal");
-  modal.classList.add("hiding");
-  modal.classList.remove("show");
-
-  setTimeout(() => {
-    modal.classList.remove("hiding");
-  }, 300);
-}
-
-// обработка кнопки "ОК"
-document.getElementById("modalOk").addEventListener("click", () => {
-  const input = document.getElementById("taskInput");
-  const taskText = input.value.trim();
-
-  if (taskText) {
-    addTask(taskText); // добавляем задание
-    hideModal();
-  } else {
-    alert("Введите название задания!");
+  async function onAddDesc() {
+    const task = getSelected();
+    if (!task) return;
+    const text = await showPrompt("Описание задания", task.desc || "");
+    if (text == null) return;
+    task.desc = text.trim();
+    await persist();
+    renderTaskView();
   }
-});
 
-// обработка кнопки "Отмена"
-document.getElementById("modalCancel").addEventListener("click", () => {
-  hideModal();
-});
 
