@@ -183,3 +183,7 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color
   font-size: 14px;
   line-height: 1.4;
 }
+
+.selected {
+  outline: 1px solid var(--accent);
+}

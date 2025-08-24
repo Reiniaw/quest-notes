@@ -29,6 +29,12 @@ function bindUI(){
   qs('#exportBtn').addEventListener('click', onExport);
   qs('#importBtn').addEventListener('click', () => qs('#importFile').click());
   qs('#importFile').addEventListener('change', onImport);
+  qs("#modal").addEventListener("click", (e) => {
+  if (e.target.id === "modal") {
+    qs("#modalCancel").click();
+  }
+});
+
 }
 
 function uid(){
@@ -55,15 +61,17 @@ function renderMainList(){
       btn.textContent = total ? `${task.title}  •  ${done}/${total}` : task.title;
 
       btn.addEventListener('click', () => selectTask(task.id));
-      renameBtn.addEventListener('click', async () => {
-        const title = prompt('Новое название задания', task.title);
+      renameBtn.addEventListener('click', async (e) => {
+        e.stopPropagation(); // чтобы не срабатывал selectTask
+        const title = await showPrompt("Новое название задания", task.title);
         if (title && title.trim()){
           task.title = title.trim();
           await persist();
           renderMainList();
           if (state.selectedId === task.id) renderTaskView();
-        }
-      });
+            }
+        });
+
       delBtn.addEventListener('click', async () => {
         if (confirm('Удалить главное задание?')){
           state.tasks = state.tasks.filter(t => t.id !== task.id);
@@ -75,7 +83,7 @@ function renderMainList(){
       });
 
       if (state.selectedId === task.id){
-        li.style.outline = '1px solid var(--accent)';
+        li.classList.add("selected");
       }
       list.appendChild(tpl);
     });
@@ -284,12 +292,17 @@ function showPrompt(title, defaultValue = "") {
     modal.classList.remove("hidden");
     modalTitle.textContent = title;
     modalInput.value = defaultValue;
+    setTimeout(() => {
     modalInput.focus();
+    modalInput.select(); // сразу выделяет весь текст
+    }, 0);
+
 
     function close(val) {
       modal.classList.add("hidden");
       okBtn.removeEventListener("click", onOk);
       cancelBtn.removeEventListener("click", onCancel);
+      modal.removeEventListener("keydown", onKey);
       resolve(val);
     }
 
@@ -300,8 +313,14 @@ function showPrompt(title, defaultValue = "") {
       close(null);
     }
 
+        function onKey(e) {
+      if (e.key === "Enter" && !e.shiftKey) onOk();
+      if (e.key === "Escape") onCancel();
+    }
+
     okBtn.addEventListener("click", onOk);
     cancelBtn.addEventListener("click", onCancel);
+    modal.addEventListener("keydown", onKey);
   });
 
 }
