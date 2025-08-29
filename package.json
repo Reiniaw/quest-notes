@@ -2,7 +2,7 @@
   "name": "quest-notes",
   "version": "1.2.0",
   "description": "Заметки в стиле квестов: главные задания и мини-задания (Electron)",
-  "main": "main.js",
+  "main": "src/main.js",
   "type": "module",
   "author": "",
   "license": "MIT",
