@@ -1,27 +1,34 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
+import { fileURLToPath } from 'url';
 import { loadTasks, saveTasks } from './tasksStore.js';
 
+// Чтобы заработал __dirname в ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const createWindow = () => {
-  const win = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     width: 1224,
     height: 700,
     resizable: false,
     maximizable: false,
     fullscreen: false,
     center: true,
-    title: 'Квест‑Заметки',
+    title: 'Квест-Заметки',
     webPreferences: {
-      preload: path.join(app.getAppPath(), 'preload.js'),
+      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
     }
   });
 
-  win.loadFile(path.join(app.getAppPath(), 'renderer', 'index.html'));
+mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
 };
+
+
 
 app.whenReady().then(() => {
   createWindow();

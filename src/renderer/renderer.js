@@ -72,15 +72,17 @@ function renderMainList(){
             }
         });
 
-      delBtn.addEventListener('click', async () => {
-        if (confirm('Удалить главное задание?')){
-          state.tasks = state.tasks.filter(t => t.id !== task.id);
-          if (state.selectedId === task.id) state.selectedId = null;
-          await persist();
-          renderMainList();
-          renderTaskView();
-        }
-      });
+delBtn.addEventListener('click', async () => {
+  const confirmed = await showConfirm("Удалить главное задание целиком?");
+  if (!confirmed) return;
+  state.tasks = state.tasks.filter(t => t.id !== task.id);
+  if (state.selectedId === task.id) state.selectedId = null;
+  await persist();
+  renderMainList();
+  renderTaskView();
+});
+
+
 
       if (state.selectedId === task.id){
         li.classList.add("selected");
@@ -209,16 +211,22 @@ async function onAddSub(){
   renderMainList();
 }
 
-async function onDeleteMain(){
+async function onDeleteMain() {
   const task = getSelected();
   if (!task) return;
-  if (!confirm('Удалить главное задание целиком?')) return;
+
+  // Показываем модальное окно с кнопками Да/Нет
+  const confirmed = await showConfirm("Удалить главное задание целиком?");
+  if (!confirmed) return;
+
   state.tasks = state.tasks.filter(t => t.id !== task.id);
   state.selectedId = null;
   await persist();
   renderMainList();
   renderTaskView();
 }
+
+
 
 async function onCompleteAll(){
   const task = getSelected();
@@ -335,4 +343,39 @@ function showPrompt(title, defaultValue = "") {
     renderTaskView();
   }
 
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    const modal = qs("#modal");
+    const modalTitle = qs("#modalTitle");
+    const modalInput = qs("#modalInput"); // можно скрыть
+    const okBtn = qs("#modalOk");
+    const cancelBtn = qs("#modalCancel");
+
+    // Настройка
+    modalTitle.textContent = message;
+    modal.classList.remove("hidden");
+    modalInput.classList.add("hidden"); // скрываем инпут
+
+    function close(val) {
+      modal.classList.add("hidden");
+      okBtn.removeEventListener("click", onOk);
+      cancelBtn.removeEventListener("click", onCancel);
+      modal.removeEventListener("keydown", onKey);
+      modalInput.classList.remove("hidden"); // вернуть инпут на будущее
+      resolve(val);
+    }
+
+    function onOk() { close(true); }
+    function onCancel() { close(false); }
+
+    function onKey(e) {
+      if (e.key === "Enter") onOk();
+      if (e.key === "Escape") onCancel();
+    }
+
+    okBtn.addEventListener("click", onOk);
+    cancelBtn.addEventListener("click", onCancel);
+    modal.addEventListener("keydown", onKey);
+  });
+}
 
