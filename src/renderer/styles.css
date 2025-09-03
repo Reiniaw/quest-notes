@@ -187,3 +187,104 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color
 .selected {
   outline: 1px solid var(--accent);
 }
+
+.color-select-box {
+  margin: 10px 0;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.color-option {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.color-option.selected {
+  border: 2px solid #000;
+}
+
+.tag {
+  display: inline-flex;       /* теперь flex для текста и крестика */
+  align-items: center;
+  gap: 4px;                   /* отступ между текстом и крестиком */
+  color: #fff;
+  padding: 4px 8px;
+  margin: 2px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  cursor: default;            /* сам тег больше не кликается */
+  transition: transform 0.1s;
+}
+
+.tag:hover {
+  transform: scale(1.05);
+}
+
+.tag-remove {
+  background: transparent;
+  border: none;
+  color: inherit;             /* цвет под цвет фона тега */
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  font-size: 1em;
+  line-height: 1;
+}
+
+.tag-remove:hover {
+  color: #000;                /* крестик затемняется при наведении */
+}
+
+#addTagBtn {
+  margin-top: 2%;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  margin-right: 6px;
+}
+
+.subtask-list {
+  margin: 4px 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.subtask-item {
+  font-size: 0.9em;
+  color: #555;
+  margin: 2px 0;
+}
+
+
+/* вложенные подзадания внутри main-item */
+/* список подзаданий */
+.nested-subtasks {
+  margin-left: 20px;
+  list-style: none;
+  padding-left: 0;
+}
+
+.nested-subtasks li {
+  margin: 4px 0;
+  cursor: pointer;
+}
+
+.nested-subtasks li.done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+
+.main-item {
+  display: flex;
+  flex-direction: column; /* теперь элементы идут сверху вниз */
+  align-items: stretch;   /* кнопка и список занимают всю ширину */
+  gap: 4px;
+}
+

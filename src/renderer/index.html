@@ -56,6 +56,8 @@
         </div>
 
         <div id="taskDesc" class="task-desc hidden"></div>
+        <div id="taskTags" class="tag-box"></div>
+        <button id="addTagBtn" class="btn">Добавить тег</button>
 
         <div class="progress">
           <div id="progressBar" class="progress-bar" style="width:0%"></div>
@@ -67,15 +69,21 @@
     </section>
   </main>
 
-  <template id="mainItemTpl">
-    <li class="main-item">
-      <button class="main-item-btn"></button>
-      <div class="main-item-actions">
-        <button data-action="rename" title="Переименовать">✎</button>
-        <button data-action="delete" title="Удалить">🗑</button>
-      </div>
-    </li>
-  </template>
+<template id="mainItemTpl">
+  <li class="main-item">
+    <div class="main-item-actions">
+      <span class="expand-btn">▶</span>
+      <button data-action="rename" title="Переименовать">✎</button>
+      <button data-action="delete" title="Удалить">🗑</button>
+    </div>
+    <button class="main-item-btn"></button>
+    <div class="main-item-actions">
+      <button data-action="addTask" title="Добавить задачу">➕</button>
+    </div>
+    <ul class="nested-subtasks"></ul>
+  </li>
+</template>
+
 
   <template id="subItemTpl">
     <li class="sub-item">

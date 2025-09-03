@@ -21,6 +21,7 @@ function bindUI(){
   qs('#deleteMainBtn').addEventListener('click', onDeleteMain);
   qs('#completeAllBtn').addEventListener('click', onCompleteAll);
   qs('#taskTitle').addEventListener('change', onRenameMain);
+  qs('#addTagBtn').addEventListener('click', onAddTag);
 
   qs('#addDescBtn').addEventListener('click', onAddDesc);
 
@@ -52,37 +53,83 @@ function renderMainList(){
     .forEach(task => {
       const tpl = qs('#mainItemTpl').content.cloneNode(true);
       const li = tpl.querySelector('.main-item');
+      const expandBtn = tpl.querySelector('.expand-btn');
       const btn = tpl.querySelector('.main-item-btn');
       const renameBtn = tpl.querySelector('[data-action="rename"]');
       const delBtn = tpl.querySelector('[data-action="delete"]');
+      const addTaskBtn = tpl.querySelector('[data-action="addTask"]');
 
       const done = (task.subtasks||[]).filter(s => s.done).length;
       const total = (task.subtasks||[]).length;
       btn.textContent = total ? `${task.title}  •  ${done}/${total}` : task.title;
 
+      // стрелочка
+      expandBtn.textContent = task.expanded ? "▼" : "▶";
+      expandBtn.addEventListener("click", () => {
+        task.expanded = !task.expanded;
+        renderMainList();
+      });
+
       btn.addEventListener('click', () => selectTask(task.id));
+
       renameBtn.addEventListener('click', async (e) => {
-        e.stopPropagation(); // чтобы не срабатывал selectTask
+        e.stopPropagation();
         const title = await showPrompt("Новое название задания", task.title);
         if (title && title.trim()){
           task.title = title.trim();
           await persist();
           renderMainList();
           if (state.selectedId === task.id) renderTaskView();
-            }
+        }
+      });
+
+      delBtn.addEventListener('click', async () => {
+        const confirmed = await showConfirm("Удалить главное задание целиком?");
+        if (!confirmed) return;
+        state.tasks = state.tasks.filter(t => t.id !== task.id);
+        if (state.selectedId === task.id) state.selectedId = null;
+        await persist();
+        renderMainList();
+        renderTaskView();
+      });
+
+      // ➕ Добавить подзадание
+      addTaskBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const text = await showPrompt("Введите текст подзадания");
+        if (text && text.trim()) {
+          task.subtasks.push({ text: text.trim(), done: false });
+          task.expanded = true; // сразу раскрываем
+          await persist();
+          renderMainList();
+          if (state.selectedId === task.id) renderTaskView();
+        }
+      });
+
+      // вложенные подзадания
+      if (task.expanded && task.subtasks?.length) {
+        const ul = li.querySelector('.nested-subtasks');
+        ul.innerHTML = '';
+
+        task.subtasks.forEach((sub, i) => {
+          const liSub = document.createElement('li');
+          liSub.textContent = sub.text;
+
+          if (sub.done) liSub.classList.add("done");
+
+          // двойной клик = смена статуса
+          liSub.addEventListener("dblclick", async () => {
+            sub.done = !sub.done;
+            await persist();
+            renderMainList();
+            if (state.selectedId === task.id) renderTaskView();
+          });
+
+          ul.appendChild(liSub);
         });
 
-delBtn.addEventListener('click', async () => {
-  const confirmed = await showConfirm("Удалить главное задание целиком?");
-  if (!confirmed) return;
-  state.tasks = state.tasks.filter(t => t.id !== task.id);
-  if (state.selectedId === task.id) state.selectedId = null;
-  await persist();
-  renderMainList();
-  renderTaskView();
-});
-
-
+        btn.after(ul);
+      }
 
       if (state.selectedId === task.id){
         li.classList.add("selected");
@@ -90,6 +137,9 @@ delBtn.addEventListener('click', async () => {
       list.appendChild(tpl);
     });
 }
+
+
+
 
 function selectTask(id){
   state.selectedId = id;
@@ -108,7 +158,8 @@ function renderTaskView(){
   const titleInput = qs('#taskTitle');
   const subList = qs('#subList');
   const descBox = qs('#taskDesc');
-  const descBtn =qs('#addDescBtn');
+  const descBtn = qs('#addDescBtn');
+  const tagBox = qs('#taskTags');
 
   const task = getSelected();
   if (!task){
@@ -122,6 +173,7 @@ function renderTaskView(){
   titleInput.value = task.title;
   subList.innerHTML = '';
 
+  // --- описание ---
   if (task.desc && task.desc.trim()){
     descBox.textContent = task.desc;
     descBox.classList.remove('hidden');
@@ -132,6 +184,7 @@ function renderTaskView(){
     descBtn.textContent = "Добавить описание";
   }
 
+  // --- подзадания ---
   (task.subtasks || []).forEach(sub => {
     const tpl = qs('#subItemTpl').content.cloneNode(true);
     const li = tpl.querySelector('.sub-item');
@@ -160,7 +213,6 @@ function renderTaskView(){
       renderMainList();
     });
 
-    // двойной клик по тексту — быстрое переключение
     text.addEventListener('dblclick', () => {
       check.checked = !check.checked;
       check.dispatchEvent(new Event('change'));
@@ -177,8 +229,39 @@ function renderTaskView(){
     subList.appendChild(tpl);
   });
 
+  // --- теги ---
+// --- теги ---
+tagBox.innerHTML = '';
+(task.tags || []).forEach(tag => {
+  const span = document.createElement('span');
+  span.className = 'tag';
+  span.style.backgroundColor = tag.color;
+
+  // Текст тега
+  const text = document.createElement('span');
+  text.textContent = tag.text;
+
+  // Кнопка удаления
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'tag-remove';
+  removeBtn.textContent = '×';
+
+  removeBtn.addEventListener('click', async (e) => {
+    e.stopPropagation(); // чтобы не срабатывали другие события
+    task.tags = task.tags.filter(t => t.text !== tag.text);
+    await persist();
+    renderTaskView();
+  });
+
+  span.appendChild(text);
+  span.appendChild(removeBtn);
+  tagBox.appendChild(span);
+});
+
+
   renderProgress(task);
 }
+
 
 function renderProgress(task){
   const done = (task.subtasks||[]).filter(s => s.done).length;
@@ -192,7 +275,7 @@ function renderProgress(task){
 async function onAddMain(){
   const title = await showPrompt("Название главного задания");
   if (!title || !title.trim()) return;
-  const task = { id: uid(), title: title.trim(), subtasks: [] };
+  const task = { id: uid(), title: title.trim(), subtasks: [], tags: [] };
   state.tasks.unshift(task);
   state.selectedId = task.id;
   await persist();
@@ -378,4 +461,116 @@ function showConfirm(message) {
     modal.addEventListener("keydown", onKey);
   });
 }
+
+async function onAddTag(){
+  const task = getSelected();
+  if (!task) return;
+
+  const tag = await showTagCreator(getAllTags());
+  if (!tag) return;
+
+  task.tags = task.tags || [];
+  if (!task.tags.some(t => t.text === tag.text)){
+    task.tags.push({ text: tag.text, color: tag.color }); // копия
+  }
+  await persist();
+  renderTaskView();
+}
+
+
+
+
+function getAllTags() {
+  const all = state.tasks.flatMap(t => t.tags || []);
+  const map = new Map();
+  all.forEach(tag => {
+    if (!map.has(tag.text)) {
+      // кладём копию
+      map.set(tag.text, { text: tag.text, color: tag.color });
+    }
+  });
+  return [...map.values()];
+}
+
+
+
+function showTagCreator(existingTags){
+  return new Promise((resolve) => {
+    const modal = qs("#modal");
+    const modalTitle = qs("#modalTitle");
+    const modalInput = qs("#modalInput");
+    const okBtn = qs("#modalOk");
+    const cancelBtn = qs("#modalCancel");
+
+    modal.classList.remove("hidden");
+    modalTitle.textContent = "Введите тег или выберите из списка";
+    modalInput.value = "";
+    modalInput.classList.remove("hidden");
+
+    // Список существующих тегов
+    const select = document.createElement("select");
+    const defaultOpt = document.createElement("option");
+    defaultOpt.textContent = "— Выбрать существующий тег —";
+    defaultOpt.value = "";
+    select.appendChild(defaultOpt);
+
+    existingTags.forEach(tag => {
+      const opt = document.createElement("option");
+      opt.value = tag.text;
+      opt.textContent = tag.text;
+      opt.style.backgroundColor = tag.color;
+      select.appendChild(opt);
+    });
+
+    modalTitle.after(select);
+
+    // Цвета для нового тега
+    const colors = ["#ff4d4f","#1890ff","#52c41a","#faad14","#722ed1","#13c2c2","#595959"];
+    const colorBox = document.createElement("div");
+    colorBox.className = "color-select-box";
+
+    let selectedColor = colors[0];
+    colors.forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = "color-option";
+      btn.style.backgroundColor = c;
+      btn.addEventListener("click", () => {
+        selectedColor = c;
+        [...colorBox.children].forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+      });
+      colorBox.appendChild(btn);
+    });
+
+    select.after(colorBox);
+
+    function close(val){
+      modal.classList.add("hidden");
+      select.remove();
+      colorBox.remove();
+      okBtn.removeEventListener("click", onOk);
+      cancelBtn.removeEventListener("click", onCancel);
+      resolve(val);
+    }
+
+    function onOk(){
+      // Если выбран готовый тег → возвращаем его
+      const selected = select.value;
+      if (selected) {
+        const tag = existingTags.find(t => t.text === selected);
+        return close({ text: tag.text, color: tag.color });
+      }
+
+      // Если создаётся новый тег
+      if (!modalInput.value.trim()) return;
+      close({ text: modalInput.value.trim(), color: selectedColor });
+
+    }
+    function onCancel(){ close(null); }
+
+    okBtn.addEventListener("click", onOk);
+    cancelBtn.addEventListener("click", onCancel);
+  });
+}
+
 
