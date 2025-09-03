@@ -288,3 +288,13 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color
   gap: 4px;
 }
 
+.sub-item.important .sub-text {
+  font-weight: bold;
+  color: #d9534f;
+}
+
+.nested-subtasks .important {
+  font-weight: bold;
+  color: #d9534f;
+}
+

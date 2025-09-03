@@ -98,7 +98,7 @@ function renderMainList(){
         e.stopPropagation();
         const text = await showPrompt("Введите текст подзадания");
         if (text && text.trim()) {
-          task.subtasks.push({ text: text.trim(), done: false });
+          task.subtasks.push({ id: uid(), text: text.trim(), done: false, important: false });
           task.expanded = true; // сразу раскрываем
           await persist();
           renderMainList();
@@ -111,22 +111,39 @@ function renderMainList(){
         const ul = li.querySelector('.nested-subtasks');
         ul.innerHTML = '';
 
-        task.subtasks.forEach((sub, i) => {
-          const liSub = document.createElement('li');
-          liSub.textContent = sub.text;
+task.subtasks.forEach((sub) => {
+  const liSub = document.createElement('li');
 
-          if (sub.done) liSub.classList.add("done");
+  // текст подзадания
+  const textSpan = document.createElement("span");
+  textSpan.textContent = sub.text;
+  liSub.appendChild(textSpan);
 
-          // двойной клик = смена статуса
-          liSub.addEventListener("dblclick", async () => {
-            sub.done = !sub.done;
-            await persist();
-            renderMainList();
-            if (state.selectedId === task.id) renderTaskView();
-          });
+  // если важно → добавляем значок
+  if (sub.important) {
+    const mark = document.createElement("span");
+    mark.textContent = " !";
+    mark.style.color = "gold";
+    mark.style.fontWeight = "bold";
+      mark.style.fontSize = "18px"; 
+  mark.style.marginLeft = "4px"; 
+    liSub.appendChild(mark);
+  }
 
-          ul.appendChild(liSub);
-        });
+  if (sub.done) liSub.classList.add("done");
+
+  // двойной клик = смена статуса
+  liSub.addEventListener("dblclick", async () => {
+    sub.done = !sub.done;
+    await persist();
+    renderMainList();
+    if (state.selectedId === task.id) renderTaskView();
+  });
+
+  ul.appendChild(liSub);
+});
+
+
 
         btn.after(ul);
       }
@@ -136,6 +153,7 @@ function renderMainList(){
       }
       list.appendChild(tpl);
     });
+    
 }
 
 
@@ -191,9 +209,25 @@ function renderTaskView(){
     const check = tpl.querySelector('.sub-check');
     const text = tpl.querySelector('.sub-text');
     const delBtn = tpl.querySelector('[data-action="delete"]');
+    const importantBtn = tpl.querySelector('[data-action="important"]');
 
     check.checked = !!sub.done;
     text.value = sub.text;
+
+      if (sub.important) {
+    li.classList.add("important");
+    importantBtn.textContent = "⭐";
+    
+  } else {
+    importantBtn.textContent = "☆";
+  }
+
+    importantBtn.addEventListener("click", async () => {
+    sub.important = !sub.important;
+    await persist();
+    renderMainList();
+    renderTaskView();
+  });
 
     check.addEventListener('change', async () => {
       sub.done = check.checked;
@@ -257,7 +291,20 @@ tagBox.innerHTML = '';
   span.appendChild(removeBtn);
   tagBox.appendChild(span);
 });
+const importantBtn = tpl.querySelector('[data-action="important"]');
+if (sub.important) {
+  li.classList.add("important");
+  importantBtn.textContent = "⭐"; // если важно
+} else {
+  importantBtn.textContent = "☆"; // если неважно
+}
 
+importantBtn.addEventListener("click", async () => {
+  sub.important = !sub.important;
+  await persist();
+  renderTaskView();
+  renderMainList();
+});
 
   renderProgress(task);
 }
@@ -574,3 +621,18 @@ function showTagCreator(existingTags){
 }
 
 
+function onSubAction(e, sub, subEl) {
+  const action = e.target.dataset.action;
+  if (!action) return;
+
+  if (action === "delete") {
+    // удаление
+  }
+
+  if (action === "important") {
+    sub.important = !sub.important;
+    subEl.classList.toggle("important", sub.important);
+    persist();
+    renderMainList(); // обновляем левую панель
+  }
+}
