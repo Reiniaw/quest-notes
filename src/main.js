@@ -11,9 +11,6 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 1224,
     height: 700,
-    resizable: false,
-    maximizable: false,
-    fullscreen: false,
     center: true,
     title: 'Квест-Заметки',
     webPreferences: {

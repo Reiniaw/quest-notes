@@ -72,6 +72,15 @@ function renderMainList(){
 
       btn.addEventListener('click', () => selectTask(task.id));
 
+      const nestedUl = document.createElement("ul");
+      nestedUl.className = "nested-subtasks";
+
+            if (task.expanded && task.subtasks?.length) {
+        // рекурсивно рендерим подзадания
+        task.subtasks.forEach(s => s.parentId = task.id);
+        renderSubtasksLeft(task.subtasks, nestedUl);
+      }
+
       renameBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const title = await showPrompt("Новое название задания", task.title);
@@ -140,7 +149,8 @@ task.subtasks.forEach((sub) => {
     if (state.selectedId === task.id) renderTaskView();
   });
 
-  ul.appendChild(liSub);
+    list.appendChild(li);
+    li.appendChild(nestedUl);
 });
 
 
@@ -154,6 +164,7 @@ task.subtasks.forEach((sub) => {
       list.appendChild(tpl);
     });
     
+  
 }
 
 
@@ -203,65 +214,9 @@ function renderTaskView(){
   }
 
   // --- подзадания ---
-  (task.subtasks || []).forEach(sub => {
-    const tpl = qs('#subItemTpl').content.cloneNode(true);
-    const li = tpl.querySelector('.sub-item');
-    const check = tpl.querySelector('.sub-check');
-    const text = tpl.querySelector('.sub-text');
-    const delBtn = tpl.querySelector('[data-action="delete"]');
-    const importantBtn = tpl.querySelector('[data-action="important"]');
+subList.innerHTML = '';
+renderSubtasks(task.subtasks || [], subList);
 
-    check.checked = !!sub.done;
-    text.value = sub.text;
-
-      if (sub.important) {
-    li.classList.add("important");
-    importantBtn.textContent = "⭐";
-    
-  } else {
-    importantBtn.textContent = "☆";
-  }
-
-    importantBtn.addEventListener("click", async () => {
-    sub.important = !sub.important;
-    await persist();
-    renderMainList();
-    renderTaskView();
-  });
-
-    check.addEventListener('change', async () => {
-      sub.done = check.checked;
-      await persist();
-      renderProgress(task);
-      renderMainList();
-    });
-
-    text.addEventListener('change', async () => {
-      const v = text.value.trim();
-      if (v.length === 0){
-        text.value = sub.text; // откат
-        return;
-      }
-      sub.text = v;
-      await persist();
-      renderMainList();
-    });
-
-    text.addEventListener('dblclick', () => {
-      check.checked = !check.checked;
-      check.dispatchEvent(new Event('change'));
-    });
-
-    delBtn.addEventListener('click', async () => {
-      const idx = task.subtasks.findIndex(s => s.id === sub.id);
-      task.subtasks.splice(idx,1);
-      await persist();
-      renderTaskView();
-      renderMainList();
-    });
-
-    subList.appendChild(tpl);
-  });
 
   // --- теги ---
 // --- теги ---
@@ -291,21 +246,6 @@ tagBox.innerHTML = '';
   span.appendChild(removeBtn);
   tagBox.appendChild(span);
 });
-const importantBtn = tpl.querySelector('[data-action="important"]');
-if (sub.important) {
-  li.classList.add("important");
-  importantBtn.textContent = "⭐"; // если важно
-} else {
-  importantBtn.textContent = "☆"; // если неважно
-}
-
-importantBtn.addEventListener("click", async () => {
-  sub.important = !sub.important;
-  await persist();
-  renderTaskView();
-  renderMainList();
-});
-
   renderProgress(task);
 }
 
@@ -631,8 +571,145 @@ function onSubAction(e, sub, subEl) {
 
   if (action === "important") {
     sub.important = !sub.important;
-    subEl.classList.toggle("important", sub.important);
-    persist();
-    renderMainList(); // обновляем левую панель
+    el.classList.toggle("important", subtask.important);
+   persist().then(() => renderMainList());
   }
+}
+
+function renderSubtasks(subtasks, container, depth = 1) {
+  container.innerHTML = '';
+
+  subtasks.forEach(subtask => {
+    const tpl = qs("#subItemTpl");
+    const el = tpl.content.firstElementChild.cloneNode(true);
+
+    const check = qs(".sub-check", el);
+    const text = qs(".sub-text", el);
+    const actions = qs(".sub-actions", el);
+    const nested = qs(".nested-subtasks", el);
+
+    check.checked = subtask.done;
+    text.value = subtask.text || "";
+    el.classList.toggle("important", subtask.important); 
+
+    // чекбокс
+    check.addEventListener("change", async () => {
+      subtask.done = check.checked;
+      await updateUI();
+    });
+
+    // редактирование текста
+    text.addEventListener("input", async () => {
+      subtask.text = text.value;
+      await updateUI();
+    });
+
+    // кнопки действий
+    actions.addEventListener("click", async e => {
+      const action = e.target.dataset.action;
+      if (!action) return;
+
+      if (action === "important") {
+        subtask.important = !subtask.important;
+        el.classList.toggle("important", subtask.important);
+        await updateUI();
+      }
+
+      if (action === "delete") {
+        const idx = subtasks.indexOf(subtask);
+        subtasks.splice(idx, 1);
+        await updateUI();
+      }
+
+      if (action === "addSubtask" && depth < 2) {
+        subtask.subtasks = subtask.subtasks || [];
+        const text = await showPrompt("Введите текст под-подзадания");
+        if (!text?.trim()) return;
+        subtask.subtasks.push({ id: uid(), text: text.trim(), done: false, important: false, subtasks: [] });
+        await updateUI();
+      }
+    });
+
+    // рекурсивный рендер под-подзаданий
+    if (subtask.subtasks?.length && depth < 2) {
+      renderSubtasks(subtask.subtasks, nested, depth + 1);
+    }
+
+    container.appendChild(el);
+  });
+}
+
+
+
+
+function countAllSubtasks(subtasks) {
+  let total = subtasks.length;
+  let done = subtasks.filter(s => s.done).length;
+  return { total, done };
+}
+
+function updateProgress() {
+  if (!state.selectedId) return;
+  const task = state.tasks.find(t => t.id === state.selectedId);
+  if (!task) return;
+
+  const { total, done } = countAllSubtasks(task.subtasks || []);
+  const bar = qs("#progressBar");
+  const text = qs("#progressText");
+
+  const percent = total > 0 ? (done / total) * 100 : 0;
+  bar.style.width = percent + "%";
+  text.textContent = `${done} / ${total}`;
+}
+
+function renderSubtasksLeft(subtasks, ul) {
+  ul.innerHTML = '';
+  subtasks.forEach(sub => {
+    const li = document.createElement("li");
+    li.textContent = sub.text;
+
+    // важное подзадание
+    if (sub.important) {
+      const mark = document.createElement("span");
+      mark.textContent = " !";
+      mark.style.color = "gold";
+      mark.style.fontWeight = "bold";
+      mark.style.fontSize = "18px"; 
+      mark.style.marginLeft = "4px"; 
+      li.appendChild(mark);
+    }
+
+    li.classList.toggle("done", sub.done);
+
+    // двойной клик
+li.addEventListener("dblclick", async (e) => {
+  e.stopPropagation();
+  setDoneRecursive(sub, !sub.done); // переключаем все под-подзадания
+  await updateUI(); // обновляем обе панели
+});
+
+    ul.appendChild(li);
+
+    // рекурсивно под-подзадания
+    if (sub.subtasks?.length) {
+      const nestedUl = document.createElement("ul");
+      nestedUl.className = "nested-subtasks";
+      li.appendChild(nestedUl);
+      renderSubtasksLeft(sub.subtasks, nestedUl);
+    }
+  });
+}
+
+function setDoneRecursive(subtask, value) {
+  subtask.done = value;
+  if (subtask.subtasks?.length) {
+    subtask.subtasks.forEach(s => setDoneRecursive(s, value));
+  }
+}
+
+
+async function updateUI() {
+  await persist();
+  renderMainList();   // левая панель
+  renderTaskView();   // правая панель
 }

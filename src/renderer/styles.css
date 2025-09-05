@@ -52,6 +52,13 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color
 .sub-text{border:none;background:transparent;color:var(--text);padding:8px;border-radius:8px;outline:1px solid rgba(255,255,255,.08)}
 .sub-text:focus{outline:1px solid var(--accent)}
 .sub-actions button{background:transparent;border:none;color:var(--muted);cursor:pointer}
+/* для всей левой панели */
+#mainList, #mainList li, .nested-subtasks li {
+  user-select: none; /* запрет выделения текста */
+  -webkit-user-select: none; /* для Safari/Chrome */
+  -moz-user-select: none; /* для Firefox */
+  -ms-user-select: none; /* для IE */
+}
 
 /* маленькие экраны */
 @media (max-width: 1000px){
@@ -290,11 +297,88 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color
 
 .sub-item.important .sub-text {
   font-weight: bold;
-  color: #d9534f;
+  color: gold;
 }
 
 .nested-subtasks .important {
   font-weight: bold;
-  color: #d9534f;
+  color: gold;
 }
 
+.nested-subtasks li {
+  padding-left: 20px;
+  position: relative;
+}
+
+.nested-subtasks li {
+  border-left: 1px dashed rgba(255,255,255,0.1);
+  margin-left: 10px;
+  padding-left: 10px;
+}
+
+/* каждый следующий уровень чуть правее */
+.nested-subtasks {
+  margin-left: 20px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.nested-subtasks .nested-subtasks {
+  margin-left: 20px; /* второй уровень */
+}
+
+.nested-subtasks .nested-subtasks .nested-subtasks {
+  margin-left: 20px; /* третий уровень и так далее */
+}
+
+.sub-subtask {
+  grid-column: 1 / -1; /* займёт всю ширину grid */
+  margin-left: 20px;
+}
+
+/* базовый стиль */
+.nested-subtasks {
+  list-style: none;
+  margin: 6px 0 0 0;
+  padding: 0;
+}
+
+/* каждый уровень вложенности сдвигается вправо */
+.sub-item .nested-subtasks {
+  margin-left: 20px;
+  border-left: 1px dashed rgba(255,255,255,0.1);
+  padding-left: 10px;
+}
+
+
+/* Вложенные подзадания в левой панели */
+.nested-subtasks {
+  list-style: none;
+  margin: 4px 0 0 0;
+  padding: 0;
+}
+
+.nested-subtasks li {
+  position: relative;
+  padding-left: 20px;
+  margin-left: 10px;
+  border-left: 1px dashed rgba(255,255,255,0.2);
+  cursor: pointer;
+}
+
+.nested-subtasks li.done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.nested-subtasks li .important {
+  color: gold;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+/* Вложенные под-подзадания */
+.nested-subtasks .nested-subtasks li {
+  padding-left: 20px; /* ещё сдвиг для второго уровня */
+  margin-left: 10px;
+}
