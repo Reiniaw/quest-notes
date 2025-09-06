@@ -27,6 +27,11 @@ function bindUI(){
 
   qs('#search').addEventListener('input', renderMainList);
   qs('#sortSelect').addEventListener('change', renderMainList);
+  // фильтр — обновляем список при изменении
+qs('#filterSelect')?.addEventListener('change', () => {
+  renderMainList();
+});
+
 
   qs('#exportBtn').addEventListener('click', onExport);
   qs('#importBtn').addEventListener('click', () => qs('#importFile').click());
@@ -49,8 +54,20 @@ function renderMainList() {
   list.innerHTML = '';
   const query = qs('#search').value?.toLowerCase() || '';
   const sort = qs('#sortSelect')?.value || 'default'; // выбранная сортировка
+  const filter = qs('#filterSelect')?.value || 'all';
+  
 
   let tasks = state.tasks.filter(t => t.title.toLowerCase().includes(query));
+
+  if (filter === "important") {
+    tasks = tasks.filter(t => t.subtasks.some(s => s.important));
+  }
+  if (filter === "done") {
+    tasks = tasks.filter(t => t.subtasks.length && t.subtasks.every(s => s.done));
+  }
+  if (filter === "notdone") {
+    tasks = tasks.filter(t => t.subtasks.some(s => !s.done));
+  }
 
   // --- сортировка ---
   if (sort === "alpha") {
@@ -64,11 +81,10 @@ function renderMainList() {
       const totalB = (b.subtasks||[]).length;
       const pctA = totalA ? doneA / totalA : 0;
       const pctB = totalB ? doneB / totalB : 0;
-      return pctB - pctA; // сначала с большим прогрессом
+      return pctB - pctA;
     });
   }
   if (sort === "created") {
-    // сортировка по "новизне" id
     tasks.sort((a, b) => parseInt(b.id.slice(-8), 36) - parseInt(a.id.slice(-8), 36));
   }
   // default = ничего не делаем

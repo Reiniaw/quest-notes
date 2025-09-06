@@ -37,15 +37,22 @@
     <aside class="sidebar">
       <div class="search-wrap">
         <input id="search" type="search" placeholder="Поиск главных заданий…" />
-        <div class="sort-box">
-  <label for="sortSelect">Сортировка:</label>
+<div class="sort-box">
+  <label for="sortSelect">Сортировка</label>
   <select id="sortSelect">
-    <option value="default">По умолчанию</option>
-    <option value="alpha">По алфавиту</option>
-    <option value="progress">По прогрессу</option>
+    <option value="name">По имени</option>
     <option value="created">По дате создания</option>
   </select>
+
+  <label for="filterSelect">Фильтр</label>
+  <select id="filterSelect">
+    <option value="all">Все</option>
+    <option value="important">Только важные</option>
+    <option value="done">Выполненные</option>
+    <option value="notdone">Невыполненные</option>
+  </select>
 </div>
+
 
       </div>
       <ul id="mainList" class="main-list" aria-label="Главные задания"></ul>

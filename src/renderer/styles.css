@@ -450,3 +450,29 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color
   border: 1px solid var(--accent);
   box-shadow: 0 0 0 2px rgba(124, 92, 255, 0.4);
 }
+
+#filterSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding: 10px 36px 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23e5e7f3' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 18px;
+}
+#filterSelect:hover {
+  border: 1px solid var(--accent);
+}
+#filterSelect:focus {
+  outline: none;
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 0 2px rgba(124, 92, 255, 0.4);
+}
