@@ -382,3 +382,71 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color
   padding-left: 20px; /* ещё сдвиг для второго уровня */
   margin-left: 10px;
 }
+
+.sub-actions button,
+.main-item-actions button {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.sub-actions button:hover,
+.main-item-actions button:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+
+.sort-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.sort-box label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+#sortSelect {
+  appearance: none;            /* убираем системный стиль */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  padding: 10px 36px 10px 12px; /* справа место под иконку */
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border .2s, box-shadow .2s;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+
+/* стрелочка */
+#sortSelect {
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23e5e7f3' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 18px;
+}
+
+#sortSelect:hover {
+  border: 1px solid var(--accent);
+}
+
+#sortSelect:focus {
+  outline: none;
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 0 2px rgba(124, 92, 255, 0.4);
+}

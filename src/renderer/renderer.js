@@ -26,6 +26,7 @@ function bindUI(){
   qs('#addDescBtn').addEventListener('click', onAddDesc);
 
   qs('#search').addEventListener('input', renderMainList);
+  qs('#sortSelect').addEventListener('change', renderMainList);
 
   qs('#exportBtn').addEventListener('click', onExport);
   qs('#importBtn').addEventListener('click', () => qs('#importFile').click());
@@ -43,129 +44,142 @@ function uid(){
 }
 
 // Рендер главных заданий
-function renderMainList(){
+function renderMainList() {
   const list = qs('#mainList');
   list.innerHTML = '';
   const query = qs('#search').value?.toLowerCase() || '';
+  const sort = qs('#sortSelect')?.value || 'default'; // выбранная сортировка
 
-  state.tasks
-    .filter(t => t.title.toLowerCase().includes(query))
-    .forEach(task => {
-      const tpl = qs('#mainItemTpl').content.cloneNode(true);
-      const li = tpl.querySelector('.main-item');
-      const expandBtn = tpl.querySelector('.expand-btn');
-      const btn = tpl.querySelector('.main-item-btn');
-      const renameBtn = tpl.querySelector('[data-action="rename"]');
-      const delBtn = tpl.querySelector('[data-action="delete"]');
-      const addTaskBtn = tpl.querySelector('[data-action="addTask"]');
+  let tasks = state.tasks.filter(t => t.title.toLowerCase().includes(query));
 
-      const done = (task.subtasks||[]).filter(s => s.done).length;
-      const total = (task.subtasks||[]).length;
-      btn.textContent = total ? `${task.title}  •  ${done}/${total}` : task.title;
+  // --- сортировка ---
+  if (sort === "alpha") {
+    tasks.sort((a, b) => a.title.localeCompare(b.title));
+  }
+  if (sort === "progress") {
+    tasks.sort((a, b) => {
+      const doneA = (a.subtasks||[]).filter(s => s.done).length;
+      const totalA = (a.subtasks||[]).length;
+      const doneB = (b.subtasks||[]).filter(s => s.done).length;
+      const totalB = (b.subtasks||[]).length;
+      const pctA = totalA ? doneA / totalA : 0;
+      const pctB = totalB ? doneB / totalB : 0;
+      return pctB - pctA; // сначала с большим прогрессом
+    });
+  }
+  if (sort === "created") {
+    // сортировка по "новизне" id
+    tasks.sort((a, b) => parseInt(b.id.slice(-8), 36) - parseInt(a.id.slice(-8), 36));
+  }
+  // default = ничего не делаем
 
-      // стрелочка
-      expandBtn.textContent = task.expanded ? "▼" : "▶";
-      expandBtn.addEventListener("click", () => {
-        task.expanded = !task.expanded;
-        renderMainList();
-      });
+  tasks.forEach(task => {
+    const tpl = qs('#mainItemTpl').content.cloneNode(true);
+    const li = tpl.querySelector('.main-item');
+    const expandBtn = tpl.querySelector('.expand-btn');
+    const btn = tpl.querySelector('.main-item-btn');
+    const renameBtn = tpl.querySelector('[data-action="rename"]');
+    const delBtn = tpl.querySelector('[data-action="delete"]');
+    const addTaskBtn = tpl.querySelector('[data-action="addTask"]');
 
-      btn.addEventListener('click', () => selectTask(task.id));
+    const done = (task.subtasks||[]).filter(s => s.done).length;
+    const total = (task.subtasks||[]).length;
+    btn.textContent = total ? `${task.title}  •  ${done}/${total}` : task.title;
 
-      const nestedUl = document.createElement("ul");
-      nestedUl.className = "nested-subtasks";
+    // стрелочка
+    expandBtn.textContent = task.expanded ? "▼" : "▶";
+    expandBtn.addEventListener("click", () => {
+      task.expanded = !task.expanded;
+      renderMainList();
+    });
 
-            if (task.expanded && task.subtasks?.length) {
-        // рекурсивно рендерим подзадания
-        task.subtasks.forEach(s => s.parentId = task.id);
-        renderSubtasksLeft(task.subtasks, nestedUl);
-      }
+    btn.addEventListener('click', () => selectTask(task.id));
 
-      renameBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const title = await showPrompt("Новое название задания", task.title);
-        if (title && title.trim()){
-          task.title = title.trim();
-          await persist();
-          renderMainList();
-          if (state.selectedId === task.id) renderTaskView();
-        }
-      });
+    const nestedUl = document.createElement("ul");
+    nestedUl.className = "nested-subtasks";
 
-      delBtn.addEventListener('click', async () => {
-        const confirmed = await showConfirm("Удалить главное задание целиком?");
-        if (!confirmed) return;
-        state.tasks = state.tasks.filter(t => t.id !== task.id);
-        if (state.selectedId === task.id) state.selectedId = null;
+    if (task.expanded && task.subtasks?.length) {
+      task.subtasks.forEach(s => s.parentId = task.id);
+      renderSubtasksLeft(task.subtasks, nestedUl);
+    }
+
+    renameBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const title = await showPrompt("Новое название задания", task.title);
+      if (title && title.trim()){
+        task.title = title.trim();
         await persist();
         renderMainList();
-        renderTaskView();
-      });
+        if (state.selectedId === task.id) renderTaskView();
+      }
+    });
 
-      // ➕ Добавить подзадание
-      addTaskBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const text = await showPrompt("Введите текст подзадания");
-        if (text && text.trim()) {
-          task.subtasks.push({ id: uid(), text: text.trim(), done: false, important: false });
-          task.expanded = true; // сразу раскрываем
+    delBtn.addEventListener('click', async () => {
+      const confirmed = await showConfirm("Удалить главное задание целиком?");
+      if (!confirmed) return;
+      state.tasks = state.tasks.filter(t => t.id !== task.id);
+      if (state.selectedId === task.id) state.selectedId = null;
+      await persist();
+      renderMainList();
+      renderTaskView();
+    });
+
+    // ➕ Добавить подзадание
+    addTaskBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const text = await showPrompt("Введите текст подзадания");
+      if (text && text.trim()) {
+        task.subtasks.push({ id: uid(), text: text.trim(), done: false, important: false });
+        task.expanded = true;
+        await persist();
+        renderMainList();
+        if (state.selectedId === task.id) renderTaskView();
+      }
+    });
+
+    // вложенные подзадания
+    if (task.expanded && task.subtasks?.length) {
+      const ul = li.querySelector('.nested-subtasks');
+      ul.innerHTML = '';
+
+      task.subtasks.forEach((sub) => {
+        const liSub = document.createElement('li');
+
+        const textSpan = document.createElement("span");
+        textSpan.textContent = sub.text;
+        liSub.appendChild(textSpan);
+
+        if (sub.important) {
+          const mark = document.createElement("span");
+          mark.textContent = " !";
+          mark.style.color = "gold";
+          mark.style.fontWeight = "bold";
+          mark.style.fontSize = "18px";
+          mark.style.marginLeft = "4px";
+          liSub.appendChild(mark);
+        }
+
+        if (sub.done) liSub.classList.add("done");
+
+        liSub.addEventListener("dblclick", async () => {
+          sub.done = !sub.done;
           await persist();
           renderMainList();
           if (state.selectedId === task.id) renderTaskView();
-        }
+        });
       });
 
-      // вложенные подзадания
-      if (task.expanded && task.subtasks?.length) {
-        const ul = li.querySelector('.nested-subtasks');
-        ul.innerHTML = '';
+      btn.after(nestedUl);
+    }
 
-task.subtasks.forEach((sub) => {
-  const liSub = document.createElement('li');
-
-  // текст подзадания
-  const textSpan = document.createElement("span");
-  textSpan.textContent = sub.text;
-  liSub.appendChild(textSpan);
-
-  // если важно → добавляем значок
-  if (sub.important) {
-    const mark = document.createElement("span");
-    mark.textContent = " !";
-    mark.style.color = "gold";
-    mark.style.fontWeight = "bold";
-      mark.style.fontSize = "18px"; 
-  mark.style.marginLeft = "4px"; 
-    liSub.appendChild(mark);
-  }
-
-  if (sub.done) liSub.classList.add("done");
-
-  // двойной клик = смена статуса
-  liSub.addEventListener("dblclick", async () => {
-    sub.done = !sub.done;
-    await persist();
-    renderMainList();
-    if (state.selectedId === task.id) renderTaskView();
+    if (state.selectedId === task.id){
+      li.classList.add("selected");
+    }
+    list.appendChild(tpl);
   });
-
-    list.appendChild(li);
-    li.appendChild(nestedUl);
-});
-
-
-
-        btn.after(ul);
-      }
-
-      if (state.selectedId === task.id){
-        li.classList.add("selected");
-      }
-      list.appendChild(tpl);
-    });
-    
-  
 }
+
+
 
 
 
@@ -572,7 +586,7 @@ function onSubAction(e, sub, subEl) {
   if (action === "important") {
     sub.important = !sub.important;
     el.classList.toggle("important", subtask.important);
-   persist().then(() => renderMainList());
+    updateUI();
   }
 }
 
@@ -592,7 +606,13 @@ function renderSubtasks(subtasks, container, depth = 1) {
     text.value = subtask.text || "";
     el.classList.toggle("important", subtask.important); 
 
-    // чекбокс
+    // если это под-подзадание (depth >= 2), убираем кнопку "+"
+    if (depth >= 2) {
+      const addBtn = actions.querySelector('[data-action="addSubtask"]');
+      if (addBtn) addBtn.remove();
+    }
+
+    // чекбокс меняет done
     check.addEventListener("change", async () => {
       subtask.done = check.checked;
       await updateUI();
@@ -603,8 +623,8 @@ function renderSubtasks(subtasks, container, depth = 1) {
       subtask.text = text.value;
       await updateUI();
     });
-
-    // кнопки действий
+    
+    // действия кнопок
     actions.addEventListener("click", async e => {
       const action = e.target.dataset.action;
       if (!action) return;
